@@ -21,9 +21,6 @@
     <ClCompile Include="HashTable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OverflowTable.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HashTable.h">
@@ -32,15 +29,12 @@
     <ClInclude Include="StudentRecord.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="OverflowTable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Node.h">
+    <ClInclude Include="Constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Unprocessed.txt" />
-    <Text Include="Input.txt" />
+    <Text Include="StudentRecords.txt" />
+    <Text Include="UnprocessedRecords.txt" />
   </ItemGroup>
 </Project>

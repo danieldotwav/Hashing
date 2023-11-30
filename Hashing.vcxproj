@@ -128,18 +128,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="HashTable.cpp" />
-    <ClCompile Include="OverflowTable.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Constants.h" />
     <ClInclude Include="HashTable.h" />
-    <ClInclude Include="Node.h" />
-    <ClInclude Include="OverflowTable.h" />
     <ClInclude Include="StudentRecord.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Input.txt" />
-    <Text Include="Unprocessed.txt" />
+    <Text Include="StudentRecords.txt" />
+    <Text Include="UnprocessedRecords.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
