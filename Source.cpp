@@ -25,7 +25,7 @@ int main() {
         << setw(LOCATION_WIDTH) << "Location" << endl;
 
 	HashTable* table = nullptr;
-    MenuOption menuOption = CREATE_TABLES; // default state
+    MenuOption menuOption = CREATE_TABLES; // Default State
     int userInput{ 0 };
 
     do {
@@ -69,6 +69,10 @@ int main() {
         }
     } while (menuOption != EXIT);
     
+    if (table != nullptr) {
+        delete table;
+    }
+    
     cout << "Terminating Program\n";
 	return 0;
 }
@@ -92,6 +96,8 @@ void CreateAndPopulateTables(HashTable*& table) {
     }
     catch (bad_alloc& ex) {
         cout << "Error: Unable to allocate memory for HashTable/OverflowTable. Please select a smaller HashTable size or try again later\n";
+        // call the function that empties the hash table DO NOT DELETE IT
+        // set to nullptr
     }
 }
 
@@ -124,19 +130,26 @@ void setTableSizes(int& hashTableSize, int& overflowTableSize) {
 }
 
 void initializeTables(HashTable*& table, int hashTableSize, int overflowTableSize) {
-    if (table != nullptr) {
-        delete table; // Delete existing hashTable if any
+    try {
+        if (table != nullptr) {
+            delete table; // Delete existing hashTable if any
+            table = nullptr;
+        }
+
+        table = new HashTable(hashTableSize, overflowTableSize);
+        cout << "Hash/Overflow Tables Created Successfully\n";
+    }
+    catch (bad_alloc& ex) {
+		cout << "Error: Unable to allocate memory for HashTable/OverflowTable. Please select a smaller HashTable size or try again later\n";
+        delete table;
         table = nullptr;
     }
-
-    table = new HashTable(hashTableSize, overflowTableSize);
-    cout << "Hash/Overflow Tables Created Successfully\n";
 }
 
 void populateTables(HashTable* table, int hashTableSize, int overflowTableSize) {
     ifstream studentRecordsFile("StudentRecords.txt");
     ofstream unprocessedRecordsFile("UnprocessedRecords.txt");
-    //TODO: Should I allow for an empty hash table
+
     if (!studentRecordsFile) {
         cout << "\nError: Input File Not Found. Terminating Program\n";
         exit(EXIT_FAILURE);
@@ -236,6 +249,7 @@ void deleteRecord(HashTable* table, stringstream& header) {
         if (record != nullptr) {
             cout << "\n-Record Deleted Successfully-\n\n" << header.str() << record->toString();
             record->setDeletedStatus(true);
+            table->incrementNumDeletedRecords();
 		}
         else {
 			cout << "\n-Record Not Found-\n";
@@ -248,11 +262,8 @@ void deleteRecord(HashTable* table, stringstream& header) {
 
 void printActiveRecords(HashTable* table, stringstream& header) {
     if (table != nullptr) {
-        cout << "\n--Active Records--\n\n";
-
-        cout << header.str();
+        cout << "\n--Active Records--\n\n" << header.str();
         table->printActiveRecords();
-        
     }
     else {
         cout << "\nUninitialized Hash Table: Cannot Print Active Records\n";
@@ -261,10 +272,13 @@ void printActiveRecords(HashTable* table, stringstream& header) {
 
 void printDeletedRecords(HashTable* table, stringstream& header) {
     if (table != nullptr) {
-        cout << "\n--Deleted Records--\n\n";
-
-        cout << header.str();
-        table->printDeletedRecords();
+        if (table->getNumDeletedRecords() > 0) {
+            cout << "\n--Deleted Records--\n\n" << header.str();
+            table->printDeletedRecords();
+        }
+        else {
+            cout << "\n-No Deleted Records Found-\n";
+        }
     }
     else {
         cout << "\nUninitialized Hash Table: Cannot Print Deleted Records\n";
@@ -279,22 +293,24 @@ void printUnprocessedRecords(HashTable* table, stringstream& header) {
         if (!unprocessedRecordsFile) {
             cout << "\nError: UnprocesedRecords.txt File Not Found. Cannot Print Records\n";
         }
-        else if (unprocessedRecordsFile.peek() == EOF) {
-            cout << "\nUnprocessed Records File Empty. Cannot Print Records";
-            unprocessedRecordsFile.close();
-        }
         else {
-            string tempID, tempLastName, tempFirstName;
-            int tempUnits, unprocessedRecordsCount = 0;
-            cout << header.str();
-            
-            while (unprocessedRecordsFile >> tempID >> tempLastName >> tempFirstName >> tempUnits) {
-                cout << left << setw(ID_WIDTH) << tempID << setw(NAME_WIDTH) << tempLastName
-                    << setw(NAME_WIDTH) << tempFirstName << right << setw(UNITS_COL1) << tempUnits 
-                    << setw(UNITS_COL2) << "" << left << setw(LOCATION_WIDTH) << "Unprocessed" << endl;
-                unprocessedRecordsCount++;
+            if (unprocessedRecordsFile.peek() == EOF) {
+                cout << "\nUnprocessed Records File Empty. Cannot Print Records";
             }
-            cout << "\nSuccessfully Printed " << unprocessedRecordsCount << " Records\n";
+            else {
+                string tempID, tempLastName, tempFirstName;
+                int tempUnits, unprocessedRecordsCount = 0;
+                cout << header.str();
+
+                while (unprocessedRecordsFile >> tempID >> tempLastName >> tempFirstName >> tempUnits) {
+                    cout << left << setw(ID_WIDTH) << tempID << setw(NAME_WIDTH) << tempLastName
+                        << setw(NAME_WIDTH) << tempFirstName << right << setw(UNITS_COL1) << tempUnits
+                        << setw(UNITS_COL2) << "" << left << setw(LOCATION_WIDTH) << "Unprocessed" << endl;
+                    unprocessedRecordsCount++;
+                }
+                cout << "\nSuccessfully Printed " << unprocessedRecordsCount << " Records\n";
+            }
+            unprocessedRecordsFile.close();
         }
 	}
     else {

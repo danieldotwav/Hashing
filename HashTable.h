@@ -6,14 +6,15 @@
 
 class HashTable {
 private:
-    StudentRecord** hashTable;
-    StudentRecord** overflowTable;
+    StudentRecord** hashTable = nullptr;
+    StudentRecord** overflowTable = nullptr;
 
     int hashTableCapacity;
     int overflowTableCapacity;
 
     int hashTableCurrentSize;
     int overflowTableCurrentSize;
+    int numDeletedRecords;
 
 public:
     HashTable();
@@ -25,12 +26,20 @@ public:
     StudentRecord* searchRecord(const std::string& id);
     void insertRecord(StudentRecord& record);
     void deleteRecord(const std::string& id);
-    void copyHashTable(const HashTable& other);
+    void copyHashTable(const HashTable& other, StudentRecord**& tempHashTable, StudentRecord**& tempOverflowTable);
+
+
     int getHashTableCurrentSize() const { return hashTableCurrentSize; }
     int getOverflowTableCurrentSize() const { return overflowTableCurrentSize; }
+    int getNumDeletedRecords() const { return numDeletedRecords; }
+    void incrementNumDeletedRecords() { ++numDeletedRecords; }
+
+    bool hashTableIsFull() { return hashTableCurrentSize == hashTableCapacity; }
+    bool overflowTableIsFull() { return overflowTableCurrentSize == overflowTableCapacity; }
 
     void printActiveRecords() const;
     void printDeletedRecords() const;
+    void emptyTables();
 
     int hashFunction(const std::string& id, int tableSize);
 };
