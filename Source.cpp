@@ -96,8 +96,11 @@ void CreateAndPopulateTables(HashTable*& table) {
     }
     catch (bad_alloc& ex) {
         cout << "Error: Unable to allocate memory for HashTable/OverflowTable. Please select a smaller HashTable size or try again later\n";
-        // call the function that empties the hash table DO NOT DELETE IT
-        // set to nullptr
+        
+        if (table != nullptr) {
+            table->emptyTables();
+            table = nullptr;
+        }
     }
 }
 
@@ -141,7 +144,7 @@ void initializeTables(HashTable*& table, int hashTableSize, int overflowTableSiz
     }
     catch (bad_alloc& ex) {
 		cout << "Error: Unable to allocate memory for HashTable/OverflowTable. Please select a smaller HashTable size or try again later\n";
-        delete table;
+        // No need to delete here; new didn't succeed
         table = nullptr;
     }
 }

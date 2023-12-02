@@ -9,20 +9,25 @@ HashTable::HashTable()
 HashTable::HashTable(int HTSize, int OTSize)
     : hashTableCapacity(HTSize), overflowTableCapacity(OTSize), hashTableCurrentSize(0), overflowTableCurrentSize(0), numDeletedRecords(0) {
     
-    hashTable = new StudentRecord * [hashTableCapacity];
-    for (int i = 0; i < hashTableCapacity; ++i) {
-        hashTable[i] = nullptr;
-    }
+    try {
+        hashTable = new StudentRecord * [hashTableCapacity];
+        for (int i = 0; i < hashTableCapacity; ++i) {
+            hashTable[i] = nullptr;
+        }
 
-    overflowTable = new StudentRecord * [overflowTableCapacity];
-    for (int i = 0; i < overflowTableCapacity; ++i) {
-        overflowTable[i] = nullptr;
+        overflowTable = new StudentRecord * [overflowTableCapacity];
+        for (int i = 0; i < overflowTableCapacity; ++i) {
+            overflowTable[i] = nullptr;
+        }
+    }
+    catch (std::bad_alloc& e) {
+        delete[] hashTable;
+        delete[] overflowTable;
     }
 }
 
 // Copy Constructor
 HashTable::HashTable(const HashTable& other) {
-    // pass copy object hashTable and overflowTable
     try {
         copyHashTable(other, hashTable, overflowTable);
     }
@@ -67,8 +72,22 @@ HashTable& HashTable::operator=(const HashTable& other) {
             hashTable = tempHashTable;
             overflowTable = tempOverflowTable;
         }
-        catch (std::bad_alloc& e) {
-            std::cerr << "\nError: Unable to Dynamically Allocate Memory. Returning Original Object\n";
+        catch (std::bad_alloc&) {
+            std::cerr << "\nError: Unable to Dynamically Allocate Memory. Cleaning up.\n";
+
+            // Clean up partially allocated temporary tables
+            if (tempHashTable != nullptr) {
+                for (int i = 0; i < other.hashTableCapacity; ++i) {
+                    delete tempHashTable[i];
+                }
+                delete[] tempHashTable;
+            }
+            if (tempOverflowTable != nullptr) {
+                for (int i = 0; i < other.overflowTableCapacity; ++i) {
+                    delete tempOverflowTable[i];
+                }
+                delete[] tempOverflowTable;
+            }
         }
     }
     return *this;
@@ -94,7 +113,7 @@ void HashTable::emptyTables() {
     }
     
     if (overflowTable != nullptr) {
-        for (int i = 0; i < overflowTableCurrentSize; ++i) {
+        for (int i = 0; i < overflowTableCapacity; ++i) {
             if (overflowTable[i] != nullptr) {
                 delete overflowTable[i];
             }
@@ -108,61 +127,35 @@ void HashTable::emptyTables() {
 // dont need the temporary pointers in the 
 // dont delete in the copy hast table function
 void HashTable::copyHashTable(const HashTable& other, StudentRecord**& tempHashTable, StudentRecord**& tempOverflowTable) {
-    try {
-        // Allocate new memory for the tables
-        tempHashTable = new StudentRecord * [other.hashTableCapacity];
-        tempOverflowTable = new StudentRecord * [other.overflowTableCapacity];
+    tempHashTable = new StudentRecord * [other.hashTableCapacity];
+    tempOverflowTable = new StudentRecord * [other.overflowTableCapacity];
 
-        // Initialize and copy hash table records
-        for (int i = 0; i < other.hashTableCapacity; ++i) {
-            if (other.hashTable[i] != nullptr) {
-                tempHashTable[i] = new StudentRecord(*(other.hashTable[i])); // Deep copy of the StudentRecord
-            }
-            else {
-                tempHashTable[i] = nullptr;
-            }
+    // Initialize and copy hash table records
+    for (int i = 0; i < other.hashTableCapacity; ++i) {
+        if (other.hashTable[i] != nullptr) {
+            tempHashTable[i] = new StudentRecord(*(other.hashTable[i])); // Deep copy of the StudentRecord
         }
-
-        // Initialize and copy overflow table records
-        for (int i = 0; i < other.overflowTableCapacity; ++i) {
-            if (other.overflowTable[i] != nullptr) {
-                tempOverflowTable[i] = new StudentRecord(*(other.overflowTable[i])); // Deep copy of the StudentRecord
-            }
-            else {
-                tempOverflowTable[i] = nullptr;
-            }
+        else {
+            tempHashTable[i] = nullptr;
         }
-
-        // Copy the capacities and current sizes
-        hashTableCapacity = other.hashTableCapacity;
-        overflowTableCapacity = other.overflowTableCapacity;
-        hashTableCurrentSize = other.hashTableCurrentSize;
-        overflowTableCurrentSize = other.overflowTableCurrentSize;
-        numDeletedRecords = other.numDeletedRecords;
     }
-    catch (std::bad_alloc& e) {
-		std::cerr << "Error: Freeing up memory for temporary hash tables\n";
-        
-        if (tempHashTable != nullptr) {
-            for (int i = 0; i < other.hashTableCapacity; ++i) {
-                if (tempHashTable[i] != nullptr) {
-                    delete tempHashTable[i];
-                }
-            }
-            delete[] tempHashTable;
-            tempHashTable = nullptr;
-        }
 
-        if (tempOverflowTable != nullptr) {
-            for (int i = 0; i < other.overflowTableCurrentSize; ++i) {
-                if (tempOverflowTable[i] != nullptr) {
-                    delete tempOverflowTable[i];
-                }
-            }
-            delete[] tempOverflowTable;
-            tempOverflowTable = nullptr;
+    // Initialize and copy overflow table records
+    for (int i = 0; i < other.overflowTableCapacity; ++i) {
+        if (other.overflowTable[i] != nullptr) {
+            tempOverflowTable[i] = new StudentRecord(*(other.overflowTable[i])); // Deep copy of the StudentRecord
         }
-	}
+        else {
+            tempOverflowTable[i] = nullptr;
+        }
+    }
+
+    // Copy the capacities and current sizes
+    hashTableCapacity = other.hashTableCapacity;
+    overflowTableCapacity = other.overflowTableCapacity;
+    hashTableCurrentSize = other.hashTableCurrentSize;
+    overflowTableCurrentSize = other.overflowTableCurrentSize;
+    numDeletedRecords = other.numDeletedRecords;
 }
 
 // Search for a record in the hash table
@@ -204,7 +197,7 @@ StudentRecord* HashTable::searchRecord(const std::string& id) {
     return result;
 }
 
-// Insert a record into the hash table
+// Insert a record into the hash table / overflow table
 void HashTable::insertRecord(StudentRecord& record) {
     int index = hashFunction(record.getID(), hashTableCapacity);
     StudentRecord* insertRecord = new StudentRecord(record);
