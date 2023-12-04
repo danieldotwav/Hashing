@@ -8,7 +8,8 @@ HashTable::HashTable()
 // Parameterized Constructor
 HashTable::HashTable(int HTSize, int OTSize)
     : hashTableCapacity(HTSize), overflowTableCapacity(OTSize), hashTableCurrentSize(0), overflowTableCurrentSize(0), numDeletedRecords(0) {
-    
+    // Post: Returns an empty HashTable object with the specified capacities. Upon Failure: An Empty HashTable object is returned.   
+
     try {
         hashTable = new StudentRecord * [hashTableCapacity];
         for (int i = 0; i < hashTableCapacity; ++i) {
@@ -21,8 +22,8 @@ HashTable::HashTable(int HTSize, int OTSize)
         }
     }
     catch (std::bad_alloc& e) {
-        delete[] hashTable;
-        delete[] overflowTable;
+        std::cout << "Error creating HashTable object. Current object's tables remain empty\n";
+        emptyTables();
     }
 }
 
@@ -32,25 +33,9 @@ HashTable::HashTable(const HashTable& other) {
         copyHashTable(other, hashTable, overflowTable);
     }
     catch (std::bad_alloc& e) {
-        std::cerr << "\nError: Unable to Dynamically Allocate Memory. Returning Original Object\n";
-        
-        // Cleanup logic
-        if (hashTable != nullptr) {
-            for (int i = 0; i < other.hashTableCapacity; ++i) {
-                if (hashTable[i] != nullptr) {
-                    delete hashTable[i];
-                }
-            }
-            delete[] hashTable;
-        }
-        if (overflowTable != nullptr) {
-            for (int i = 0; i < other.overflowTableCapacity; ++i) {
-                if (overflowTable[i] != nullptr) {
-                    delete overflowTable[i];
-                }
-            }
-            delete[] overflowTable;
-        }
+        std::cerr << "\nError: Unable to Dynamically Allocate Memory. The Object Remains Uninitialized. Please Attempt to Initialize The Tables In Order To Process Data.\n";
+
+        cleanupPartiallyFilledTables(hashTable, overflowTable, other.getHashTableCapacity(), other.getOverflowTableCapacity());
     }
 }
 
@@ -60,8 +45,8 @@ HashTable& HashTable::operator=(const HashTable& other) {
     // if it works  th to
     
     if (this != &other) {
-        StudentRecord** tempHashTable;
-        StudentRecord** tempOverflowTable;
+        StudentRecord** tempHashTable = nullptr;
+        StudentRecord** tempOverflowTable = nullptr;
 
         try {
             //copyHashTable(to, th, other);
@@ -73,21 +58,12 @@ HashTable& HashTable::operator=(const HashTable& other) {
             overflowTable = tempOverflowTable;
         }
         catch (std::bad_alloc&) {
-            std::cerr << "\nError: Unable to Dynamically Allocate Memory. Cleaning up.\n";
+            std::cerr << "\nError: Unable to Dynamically Allocate Memory. Original Object Remains Unchanged\n";
 
             // Clean up partially allocated temporary tables
-            if (tempHashTable != nullptr) {
-                for (int i = 0; i < other.hashTableCapacity; ++i) {
-                    delete tempHashTable[i];
-                }
-                delete[] tempHashTable;
-            }
-            if (tempOverflowTable != nullptr) {
-                for (int i = 0; i < other.overflowTableCapacity; ++i) {
-                    delete tempOverflowTable[i];
-                }
-                delete[] tempOverflowTable;
-            }
+            int tempHTCapacity = other.getHashTableCapacity();
+            int tempOTCapacity = other.getOverflowTableCapacity();
+            cleanupPartiallyFilledTables(tempHashTable, tempOverflowTable, tempHTCapacity, tempOTCapacity);
         }
     }
     return *this;
@@ -101,7 +77,9 @@ HashTable::~HashTable() {
 }
 
 // use in copy assignment operator after successfull copy
+
 void HashTable::emptyTables() {
+    // Post: Deletes all dynamically allocated memory in current objects hash table and overflow table
     if (hashTable != nullptr) {
         for (int i = 0; i < hashTableCapacity; ++i) {
             if (hashTable[i] != nullptr) {
@@ -123,12 +101,33 @@ void HashTable::emptyTables() {
     }
 }
 
+
+void HashTable::cleanupPartiallyFilledTables(StudentRecord**& tempHashTable, StudentRecord**& tempOverflowTable, int hashTableCapacity, int overflowTableCapacity) {
+    // Post: Cleans up partially filled tables in other object
+    if (tempHashTable != nullptr) {
+        for (int i = 0; i < hashTableCapacity; ++i) {
+            delete tempHashTable[i];
+        }
+        delete[] tempHashTable;
+        tempHashTable = nullptr;
+    }
+
+    if (tempOverflowTable != nullptr) {
+        for (int i = 0; i < overflowTableCapacity; ++i) {
+            delete tempOverflowTable[i];
+        }
+        delete[] tempOverflowTable;
+        tempOverflowTable = nullptr;
+    }
+}
+
 // in the assignemnt operator the th and to are the temporary pointers created using the left objects memebers
 // dont need the temporary pointers in the 
 // dont delete in the copy hast table function
 void HashTable::copyHashTable(const HashTable& other, StudentRecord**& tempHashTable, StudentRecord**& tempOverflowTable) {
-    tempHashTable = new StudentRecord * [other.hashTableCapacity];
-    tempOverflowTable = new StudentRecord * [other.overflowTableCapacity];
+
+    tempHashTable = new StudentRecord*[other.hashTableCapacity];
+    tempOverflowTable = new StudentRecord*[other.overflowTableCapacity];
 
     // Initialize and copy hash table records
     for (int i = 0; i < other.hashTableCapacity; ++i) {

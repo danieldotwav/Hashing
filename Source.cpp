@@ -1,3 +1,29 @@
+/* Override the global 'new' operator to test DMA failure after the specified allocation count */
+/*
+#include <new>
+#include <cstddef>
+#include <iostream>
+
+static int allocationCount = 0;
+static int failOnCount = 10000; // Set this to the allocation count on which you want to fail
+
+void* operator new(std::size_t size) throw(std::bad_alloc) {
+    if (++allocationCount >= failOnCount) {
+        throw std::bad_alloc();
+
+    }
+    return malloc(size);
+}
+
+/*
+void operator delete(void* memory) throw() {
+    free(memory);
+}
+*/
+
+
+/* End of 'new' operator override */
+
 #include "HashTable.h"
 #include <fstream>
 using namespace std;
@@ -90,12 +116,14 @@ void CreateAndPopulateTables(HashTable*& table) {
         initializeTables(table, hashTableSize, overflowTableSize);
 
         // FILL THE HASHTABLE/OVERFLOW TABLE
-        populateTables(table, hashTableSize, overflowTableSize);
-
-        cout << "\n\nHash/Overflow Tables Populated Successfully\n";
+        if (table->hashTableIsInitialized() && table->overflowTableIsInitialized()) {
+            // First Check For Existing Tables
+            populateTables(table, hashTableSize, overflowTableSize);
+            cout << "\n\nHash/Overflow Tables *Populated* With Student Records Successfully\n";
+        }
     }
     catch (bad_alloc& ex) {
-        cout << "Error: Unable to allocate memory for HashTable/OverflowTable. Please select a smaller HashTable size or try again later\n";
+        cout << "\nError: DMA Failure. Unable to *Populate* HashTable/OverflowTable With Student Records. Please select a smaller HashTable size or try again later\n";
         
         if (table != nullptr) {
             table->emptyTables();
@@ -117,7 +145,6 @@ void setTableSizes(int& hashTableSize, int& overflowTableSize) {
         case ONE_HUNDRED:
         case ONE_THOUSAND:
             hashTableSize = static_cast<HashTableSize>(userInput);
-            cout << "\nCreating Hash Table of Size " << userInput << "...\n";
             size = static_cast<HashTableSize>(userInput);
             break;
         default:
@@ -130,22 +157,28 @@ void setTableSizes(int& hashTableSize, int& overflowTableSize) {
     if ((OVERFLOW_TABLE_SIZE_MODIFIER * hashTableSize) != overflowTableSize) {
         overflowTableSize++;
     }
+
+    cout << "\nCreating Hash Table of Size " << userInput << "...\n"
+        << "Creating Overflow Table of Size " << overflowTableSize << "...\n";
 }
 
 void initializeTables(HashTable*& table, int hashTableSize, int overflowTableSize) {
-    try {
-        if (table != nullptr) {
-            delete table; // Delete existing hashTable if any
-            table = nullptr;
-        }
-
-        table = new HashTable(hashTableSize, overflowTableSize);
-        cout << "Hash/Overflow Tables Created Successfully\n";
-    }
-    catch (bad_alloc& ex) {
-		cout << "Error: Unable to allocate memory for HashTable/OverflowTable. Please select a smaller HashTable size or try again later\n";
-        // No need to delete here; new didn't succeed
+    if (table != nullptr) {
+        delete table; // Delete existing hashTable if any
         table = nullptr;
+    }
+
+    table = new HashTable(hashTableSize, overflowTableSize);
+
+    // If the object cannot be created, its table members are cleaned up in the constructor
+    // So we check if either table is uninitialized to determine if the object was created
+    if (table != nullptr && table->hashTableIsInitialized() && table->overflowTableIsInitialized()) {
+        cout << "\nHash/Overflow Tables *Initialized* Successfully\n";
+    }
+    else {
+        delete table;
+        table = nullptr;
+        cout << "Error: DMA Failure. Unable to *Initialize* Hash/Overflow Tables. Please Try Again Later\n";
     }
 }
 
@@ -167,8 +200,7 @@ void populateTables(HashTable* table, int hashTableSize, int overflowTableSize) 
     bool canWriteToUnprocessedFile = true;
     if (!unprocessedRecordsFile) {
         cout << "\nWarning: Unable to Generate/Modify UnprocessedRecords.txt File\n"
-            "Any records that do not fit in the Hash/Overflow tables will be printed" 
-            " to the console\n";
+            "Any records that do not fit in the Hash/Overflow tables will be printed to the console\n";
         canWriteToUnprocessedFile = false;
     }
 

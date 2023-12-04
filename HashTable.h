@@ -22,24 +22,31 @@ public:
     HashTable(const HashTable& other);
     HashTable& operator=(const HashTable& other);
     ~HashTable();
+    void emptyTables();
+    void cleanupPartiallyFilledTables(StudentRecord**& tempHashTable, StudentRecord**& tempOverflowTable, int hashTableCapacity, int overflowTableCapacity);
 
     StudentRecord* searchRecord(const std::string& id);
     void insertRecord(StudentRecord& record);
     void deleteRecord(const std::string& id);
     void copyHashTable(const HashTable& other, StudentRecord**& tempHashTable, StudentRecord**& tempOverflowTable);
 
-
     int getHashTableCurrentSize() const { return hashTableCurrentSize; }
     int getOverflowTableCurrentSize() const { return overflowTableCurrentSize; }
+    int getHashTableCapacity() const { return hashTableCapacity; }
+    int getOverflowTableCapacity() const { return overflowTableCapacity; }
     int getNumDeletedRecords() const { return numDeletedRecords; }
+
     void incrementNumDeletedRecords() { ++numDeletedRecords; }
+    void setHashTableCapacity(int capacity) { hashTableCapacity = capacity; }
+    void setOverflowTableCapacity(int capacity) { overflowTableCapacity = capacity; }
 
     bool hashTableIsFull() { return hashTableCurrentSize == hashTableCapacity; }
     bool overflowTableIsFull() { return overflowTableCurrentSize == overflowTableCapacity; }
+    bool hashTableIsInitialized() const { return (hashTable != nullptr); }
+    bool overflowTableIsInitialized() const { return (overflowTable != nullptr); }
 
     void printActiveRecords() const;
     void printDeletedRecords() const;
-    void emptyTables();
 
     int hashFunction(const std::string& id, int tableSize);
 };
