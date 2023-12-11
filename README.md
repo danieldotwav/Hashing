@@ -14,11 +14,17 @@ This project implements a menu-driven console program for managing hash and over
 
 ### Installation
 1. Clone the repository to your local machine:
-   ``` git clone [github.com/danieldotwav/Hashing]
+   ```
+   git clone [github.com/danieldotwav/Hashing]
+   ```
 2. Compile the source files. For example, using GCC:
-   ``` g++ -o hash_table source.cpp HashTable.cpp
+   ```
+   g++ -o hash_table source.cpp HashTable.cpp
+   ```
 3. Run the compiled program:
-   ``` ./hash_table
+   ```
+   ./hash_table
+   ```
 
 ## Usage
 After running the program, follow the on-screen menu to interact with the hash table system. The menu includes options for creating tables, searching, deleting, and printing records.
